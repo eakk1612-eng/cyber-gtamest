@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Maze - Antigravity Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0033 50%, #000a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background:
+                repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.05) 0px, transparent 1px, transparent 2px, rgba(0, 255, 255, 0.05) 3px),
+                repeating-linear-gradient(90deg, rgba(255, 0, 255, 0.05) 0px, transparent 1px, transparent 2px, rgba(255, 0, 255, 0.05) 3px);
+            animation: gridScroll 15s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridScroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(40px, 40px); }
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: #00ffff;
+            text-shadow:
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                0 0 30px #ff00ff,
+                0 0 40px #ff00ff;
+            margin-bottom: 15px;
+            animation: titlePulse 3s ease-in-out infinite;
+            letter-spacing: 5px;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            padding: 10px 25px;
+            border-radius: 12px;
+            box-shadow:
+                0 0 15px rgba(0, 255, 255, 0.4),
+                inset 0 0 15px rgba(0, 255, 255, 0.1);
+            min-width: 120px;
+        }
+
+        .stat-box label {
+            color: #ff00ff;
+            font-size: 0.85em;
+            display: block;
+            text-shadow: 0 0 5px #ff00ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-box span {
+            color: #00ffff;
+            font-size: 1.8em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        #game-container {
+            position: relative;
+            margin: 0 auto;
+            perspective: 1200px;
+        }
+
+        #maze {
+            display: grid;
+            gap: 2px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            box-shadow:
+                0 0 40px rgba(0, 255, 255, 0.6),
+                inset 0 0 40px rgba(0, 0, 0, 0.6);
+            transform-style: preserve-3d;
+            animation: mazeFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes mazeFloat {
+            0%, 100% { transform: rotateX(2deg) rotateY(0deg); }
+            50% { transform: rotateX(-2deg) rotateY(2deg); }
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            position: relative;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            border-radius: 4px;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .wall {
+            background: linear-gradient(135deg, #1a0033 0%, #330066 100%);
+            border: 1px solid #6600cc;
+            box-shadow:
+                0 0 10px rgba(102, 0, 204, 0.5),
+                inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .wall::before {
+            background: linear-gradient(135deg, #330066, #1a0033);
+            box-shadow: 0 0 15px rgba(102, 0, 204, 0.8);
+        }
+
+        .path {
+            background: linear-gradient(135deg, #001a1a 0%, #003333 100%);
+            border: 1px solid #006666;
+            box-shadow:
+                0 0 8px rgba(0, 102, 102, 0.3),
+                inset 0 0 8px rgba(0, 255, 255, 0.1);
+        }
+
+        .player {
+            background: linear-gradient(135deg, #00ffff, #00ccff) !important;
+            border: 2px solid #00ffff !important;
+            box-shadow:
+                0 0 25px rgba(0, 255, 255, 0.9),
+                0 0 50px rgba(0, 255, 255, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.5) !important;
+            animation: playerPulse 1s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        .player::before {
+            content: '◉';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 0 10px #00ffff;
+            animation: playerRotate 2s linear infinite;
+        }
+
+        @keyframes playerPulse {
+            0%, 100% { transform: scale(1) translateZ(0px); }
+            50% { transform: scale(1.15) translateZ(10px); }
+        }
+
+        @keyframes playerRotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .goal {
+            background: linear-gradient(135deg, #ff00ff, #ff0080) !important;
+            border: 2px solid #ff00ff !important;
+            box-shadow:
+                0 0 25px rgba(255, 0, 255, 0.9),
+                0 0 50px rgba(255, 0, 255, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.5) !important;
+            animation: goalPulse 1.5s ease-in-out infinite;
+        }
+
+        .goal::before {
+            content: '★';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            color: #fff;
+            text-shadow: 0 0 10px #ff00ff;
+            animation: goalSpin 3s linear infinite;
+        }
+
+        @keyframes goalPulse {
+            0%, 100% { transform: scale(1) translateZ(0px); }
+            50% { transform: scale(1.2) translateZ(15px); }
+        }
+
+        @keyframes goalSpin {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+        }
+
+        .coin {
+            background: linear-gradient(135deg, #ffff00, #ffaa00) !important;
+            border: 2px solid #ffff00 !important;
+            box-shadow:
+                0 0 20px rgba(255, 255, 0, 0.8),
+                inset 0 0 15px rgba(255, 255, 255, 0.4) !important;
+            animation: coinFloat 2s ease-in-out infinite;
+        }
+
+        .coin::before {
+            content: '◈';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            color: #fff;
+            text-shadow: 0 0 10px #ffff00;
+            animation: coinRotate 4s linear infinite;
+        }
+
+        @keyframes coinFloat {
+            0%, 100% { transform: translateY(0) translateZ(5px); }
+            50% { transform: translateY(-5px) translateZ(10px); }
+        }
+
+        @keyframes coinRotate {
+            0% { transform: translate(-50%, -50%) rotateY(0deg); }
+            100% { transform: translate(-50%, -50%) rotateY(360deg); }
+        }
+
+        .controls {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 35px;
+            font-size: 1.1em;
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 35px rgba(0, 255, 255, 0.9);
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+        }
+
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .arrow-keys {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(2, 60px);
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .arrow-btn {
+            width: 60px;
+            height: 60px;
+            padding: 0;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arrow-btn:nth-child(1) { grid-column: 2; grid-row: 1; }
+        .arrow-btn:nth-child(2) { grid-column: 1; grid-row: 2; }
+        .arrow-btn:nth-child(3) { grid-column: 2; grid-row: 2; }
+        .arrow-btn:nth-child(4) { grid-column: 3; grid-row: 2; }
+
+        .info {
+            margin-top: 20px;
+            color: #00ffff;
+            font-size: 0.95em;
+            text-shadow: 0 0 5px #00ffff;
+            line-height: 1.6;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 5px #00ffff;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow:
+                0 0 50px rgba(0, 255, 255, 0.8),
+                inset 0 0 30px rgba(0, 255, 255, 0.2);
+            animation: messageAppear 0.5s ease-out;
+        }
+
+        @keyframes messageAppear {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .message h2 {
+            color: #ff00ff;
+            font-size: 3em;
+            text-shadow: 0 0 20px #ff00ff;
+            margin-bottom: 20px;
+        }
+
+        .message p {
+            color: #00ffff;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #00ffff;
+            margin: 10px 0;
+        }
+
+        .level-indicator {
+            display: inline-block;
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #ff00ff;
+            padding: 5px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        #start-screen.hidden {
+            display: none;
+        }
+
+        .start-title {
+            font-size: 5em;
+            color: #00ffff;
+            text-shadow:
+                0 0 20px #00ffff,
+                0 0 40px #00ffff,
+                0 0 60px #ff00ff,
+                0 0 80px #ff00ff;
+            margin-bottom: 30px;
+            animation: titleFloat 3s ease-in-out infinite;
+            letter-spacing: 8px;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .start-subtitle {
+            font-size: 1.5em;
+            color: #ff00ff;
+            text-shadow: 0 0 15px #ff00ff;
+            margin-bottom: 50px;
+            letter-spacing: 3px;
+        }
+
+        .difficulty-selection {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .difficulty-btn {
+            padding: 20px 40px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
+
+        .difficulty-btn:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+            border-color: #ff00ff;
+            color: #ff00ff;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+        }
+
+        .difficulty-btn.selected {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.4), rgba(0, 255, 255, 0.4));
+            box-shadow: 0 0 40px rgba(255, 0, 255, 0.8);
+        }
+
+        .start-btn {
+            padding: 25px 60px;
+            font-size: 2em;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+            animation: startBtnPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes startBtnPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .start-btn:hover {
+            transform: scale(1.15) translateY(-5px);
+            box-shadow: 0 0 50px rgba(0, 255, 255, 1);
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+        }
+
+        .features-list {
+            margin-top: 40px;
+            color: #00ffff;
+            font-size: 1.1em;
+            text-align: center;
+            line-height: 2;
+        }
+
+        .features-list div {
+            text-shadow: 0 0 10px #00ffff;
+            animation: featureGlow 3s ease-in-out infinite;
+            animation-delay: calc(var(--i) * 0.3s);
+        }
+
+        @keyframes featureGlow {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; text-shadow: 0 0 20px #00ffff; }
+        }
+
+        #pause-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+        }
+
+        #pause-screen.active {
+            display: flex;
+        }
+
+        .pause-title {
+            font-size: 4em;
+            color: #ff00ff;
+            text-shadow: 0 0 30px #ff00ff;
+            margin-bottom: 40px;
+            letter-spacing: 5px;
+        }
+
+        .pause-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .pause-btn {
+            padding: 18px 50px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(255, 0, 255, 0.3));
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .pause-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.4), rgba(0, 255, 255, 0.4));
+        }
+
+        .high-score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #ff00ff;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .high-score label {
+            color: #ff00ff;
+            font-size: 0.9em;
+            display: block;
+            text-shadow: 0 0 5px #ff00ff;
+        }
+
+        .high-score span {
+            color: #00ffff;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .power-up {
+            background: linear-gradient(135deg, #00ff00, #00cc00) !important;
+            border: 2px solid #00ff00 !important;
+            box-shadow:
+                0 0 20px rgba(0, 255, 0, 0.8),
+                inset 0 0 15px rgba(255, 255, 255, 0.4) !important;
+            animation: powerUpPulse 1s ease-in-out infinite;
+        }
+
+        .power-up::before {
+            content: '⚡';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 26px;
+            color: #fff;
+            text-shadow: 0 0 15px #00ff00;
+        }
+
+        @keyframes powerUpPulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+        }
+
+        .speed-mode {
+            animation: speedEffect 0.3s ease-in-out;
+        }
+
+        @keyframes speedEffect {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(180deg); }
+        }
+
+        @media (max-width: 768px) {
+            .start-title { font-size: 3em; }
+            .difficulty-selection { flex-direction: column; gap: 15px; }
+            .difficulty-btn { padding: 15px 30px; font-size: 1.1em; }
+            .start-btn { padding: 20px 40px; font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div class="start-title">⚡ CYBER MAZE ⚡</div>
+        <div class="start-subtitle">ANTIGRAVITY EXPLORER</div>
+
+        <div class="difficulty-selection">
+            <button class="difficulty-btn selected" data-difficulty="easy">
+                EASY<br>
+                <small style="font-size: 0.6em; opacity: 0.8;">13x13</small>
+            </button>
+            <button class="difficulty-btn" data-difficulty="medium">
+                MEDIUM<br>
+                <small style="font-size: 0.6em; opacity: 0.8;">17x17</small>
+            </button>
+            <button class="difficulty-btn" data-difficulty="hard">
+                HARD<br>
+                <small style="font-size: 0.6em; opacity: 0.8;">21x21</small>
+            </button>
+        </div>
+
+        <button class="start-btn" id="start-game-btn">START MISSION</button>
+
+        <div class="features-list">
+            <div style="--i: 0">⚡ เก็บพลังงาน Power-Up เพื่อเดินเร็ว 2 เท่า</div>
+            <div style="--i: 1">◈ สะสมเหรียญเพื่อคะแนนโบนัส</div>
+            <div style="--i: 2">★ ผ่านด่านเพื่อปลดล็อกเขาวงกตใหม่</div>
+            <div style="--i: 3">🏆 ทำสถิติเวลาที่ดีที่สุด</div>
+        </div>
+    </div>
+
+    <!-- Pause Screen -->
+    <div id="pause-screen">
+        <div class="pause-title">⏸ PAUSED</div>
+        <div class="pause-menu">
+            <button class="pause-btn" id="resume-btn">RESUME</button>
+            <button class="pause-btn" id="restart-btn">RESTART</button>
+            <button class="pause-btn" id="main-menu-btn">MAIN MENU</button>
+        </div>
+    </div>
+
+    <div class="high-score">
+        <label>BEST TIME</label>
+        <span id="best-time">--</span>
+    </div>
+
+    <div class="container">
+        <h1>⚡ CYBER MAZE ⚡</h1>
+
+        <div class="stats">
+            <div class="stat-box">
+                <label>LEVEL</label>
+                <span id="level">1</span>
+            </div>
+            <div class="stat-box">
+                <label>MOVES</label>
+                <span id="moves">0</span>
+            </div>
+            <div class="stat-box">
+                <label>COINS</label>
+                <span id="coins">0</span>
+            </div>
+            <div class="stat-box">
+                <label>TIME</label>
+                <span id="time">0</span>
+            </div>
+        </div>
+
+        <div id="game-container">
+            <div id="maze"></div>
+        </div>
+
+        <div class="controls">
+            <button id="pause-game">PAUSE</button>
+            <button id="new-game">NEW GAME</button>
+            <button id="next-level">NEXT LEVEL</button>
+        </div>
+
+        <div class="arrow-keys">
+            <button class="arrow-btn" data-dir="up">▲</button>
+            <button class="arrow-btn" data-dir="left">◄</button>
+            <button class="arrow-btn" data-dir="down">▼</button>
+            <button class="arrow-btn" data-dir="right">►</button>
+        </div>
+
+        <div class="info">
+            🎮 ใช้ปุ่มลูกศร, WASD หรือ ESC (หยุด)<br>
+            ★ หาทางไปยังจุดหมาย | ◈ เก็บเหรียญ | ⚡ Power-Up เดินเร็ว 2x
+        </div>
+    </div>
+
+    <script>
+        let mazeSize = 13;
+        let maze = [];
+        let playerPos = { x: 1, y: 1 };
+        let goalPos = { x: 11, y: 11 };
+        let coins = [];
+        let powerUps = [];
+        let level = 1;
+        let moves = 0;
+        let coinsCollected = 0;
+        let startTime = 0;
+        let timerInterval = null;
+        let isPaused = false;
+        let isGameStarted = false;
+        let difficulty = 'easy';
+        let bestTime = localStorage.getItem('bestTime') || null;
+        let speedBoostActive = false;
+        let speedBoostMoves = 0;
+
+        function initGame() {
+            moves = 0;
+            coinsCollected = 0;
+            speedBoostActive = false;
+            speedBoostMoves = 0;
+            startTime = Date.now();
+            isPaused = false;
+            if (timerInterval) clearInterval(timerInterval);
+
+            generateMaze();
+            updateStats();
+            renderMaze();
+            startTimer();
+            createParticles();
+            updateBestTime();
+        }
+
+        function updateBestTime() {
+            const bestTimeElement = document.getElementById('best-time');
+            if (bestTime) {
+                bestTimeElement.textContent = bestTime + 's';
+            } else {
+                bestTimeElement.textContent = '--';
+            }
+        }
+
+        function generateMaze() {
+            // Initialize maze with walls based on difficulty
+            switch(difficulty) {
+                case 'easy':
+                    mazeSize = 13 + (level - 1) * 2;
+                    if (mazeSize > 17) mazeSize = 17;
+                    break;
+                case 'medium':
+                    mazeSize = 17 + (level - 1) * 2;
+                    if (mazeSize > 21) mazeSize = 21;
+                    break;
+                case 'hard':
+                    mazeSize = 21 + (level - 1) * 2;
+                    if (mazeSize > 25) mazeSize = 25;
+                    break;
+            }
+
+            maze = Array(mazeSize).fill(null).map(() => Array(mazeSize).fill(1));
+
+            // Generate maze using recursive backtracking
+            const stack = [];
+            const startX = 1;
+            const startY = 1;
+            maze[startY][startX] = 0;
+            stack.push({ x: startX, y: startY });
+
+            const directions = [
+                { dx: 0, dy: -2 },
+                { dx: 2, dy: 0 },
+                { dx: 0, dy: 2 },
+                { dx: -2, dy: 0 }
+            ];
+
+            while (stack.length > 0) {
+                const current = stack[stack.length - 1];
+                const shuffled = directions.sort(() => Math.random() - 0.5);
+                let found = false;
+
+                for (const dir of shuffled) {
+                    const newX = current.x + dir.dx;
+                    const newY = current.y + dir.dy;
+
+                    if (newX > 0 && newX < mazeSize - 1 &&
+                        newY > 0 && newY < mazeSize - 1 &&
+                        maze[newY][newX] === 1) {
+
+                        maze[newY][newX] = 0;
+                        maze[current.y + dir.dy / 2][current.x + dir.dx / 2] = 0;
+                        stack.push({ x: newX, y: newY });
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    stack.pop();
+                }
+            }
+
+            // Set player and goal positions
+            playerPos = { x: 1, y: 1 };
+            goalPos = { x: mazeSize - 2, y: mazeSize - 2 };
+
+            // Place coins
+            coins = [];
+            const numCoins = 3 + level;
+            for (let i = 0; i < numCoins; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * (mazeSize - 2)) + 1;
+                    y = Math.floor(Math.random() * (mazeSize - 2)) + 1;
+                } while (maze[y][x] === 1 ||
+                         (x === playerPos.x && y === playerPos.y) ||
+                         (x === goalPos.x && y === goalPos.y) ||
+                         coins.some(c => c.x === x && c.y === y));
+
+                coins.push({ x, y });
+            }
+
+            // Place power-ups
+            powerUps = [];
+            const numPowerUps = Math.floor(level / 2) + 1;
+            for (let i = 0; i < numPowerUps; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * (mazeSize - 2)) + 1;
+                    y = Math.floor(Math.random() * (mazeSize - 2)) + 1;
+                } while (maze[y][x] === 1 ||
+                         (x === playerPos.x && y === playerPos.y) ||
+                         (x === goalPos.x && y === goalPos.y) ||
+                         coins.some(c => c.x === x && c.y === y) ||
+                         powerUps.some(p => p.x === x && p.y === y));
+
+                powerUps.push({ x, y });
+            }
+        }
+
+        function renderMaze() {
+            const mazeElement = document.getElementById('maze');
+            mazeElement.innerHTML = '';
+            mazeElement.style.gridTemplateColumns = `repeat(${mazeSize}, 40px)`;
+
+            for (let y = 0; y < mazeSize; y++) {
+                for (let x = 0; x < mazeSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    if (maze[y][x] === 1) {
+                        cell.classList.add('wall');
+                    } else {
+                        cell.classList.add('path');
+                    }
+
+                    if (x === playerPos.x && y === playerPos.y) {
+                        cell.classList.add('player');
+                    }
+
+                    if (x === goalPos.x && y === goalPos.y) {
+                        cell.classList.add('goal');
+                    }
+
+                    if (coins.some(c => c.x === x && c.y === y)) {
+                        cell.classList.add('coin');
+                    }
+
+                    if (powerUps.some(p => p.x === x && p.y === y)) {
+                        cell.classList.add('power-up');
+                    }
+
+                    mazeElement.appendChild(cell);
+                }
+            }
+        }
+
+        function movePlayer(dx, dy) {
+            if (isPaused || !isGameStarted) return;
+
+            const newX = playerPos.x + dx;
+            const newY = playerPos.y + dy;
+
+            if (newX >= 0 && newX < mazeSize &&
+                newY >= 0 && newY < mazeSize &&
+                maze[newY][newX] === 0) {
+
+                playerPos.x = newX;
+                playerPos.y = newY;
+                moves++;
+
+                // Check for speed boost countdown
+                if (speedBoostActive) {
+                    speedBoostMoves--;
+                    if (speedBoostMoves <= 0) {
+                        speedBoostActive = false;
+                    }
+                }
+
+                // Check for coin collection
+                const coinIndex = coins.findIndex(c => c.x === newX && c.y === newY);
+                if (coinIndex !== -1) {
+                    coins.splice(coinIndex, 1);
+                    coinsCollected++;
+                    createCoinEffect(newX, newY);
+                }
+
+                // Check for power-up collection
+                const powerUpIndex = powerUps.findIndex(p => p.x === newX && p.y === newY);
+                if (powerUpIndex !== -1) {
+                    powerUps.splice(powerUpIndex, 1);
+                    activateSpeedBoost();
+                    createPowerUpEffect(newX, newY);
+                }
+
+                // Check for goal
+                if (newX === goalPos.x && newY === goalPos.y) {
+                    winLevel();
+                }
+
+                updateStats();
+                renderMaze();
+            }
+        }
+
+        function activateSpeedBoost() {
+            speedBoostActive = true;
+            speedBoostMoves = 10;
+            const mazeElement = document.getElementById('maze');
+            mazeElement.classList.add('speed-mode');
+            setTimeout(() => {
+                mazeElement.classList.remove('speed-mode');
+            }, 300);
+        }
+
+        function createCoinEffect(x, y) {
+            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (!cell) return;
+
+            const rect = cell.getBoundingClientRect();
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = rect.left + rect.width / 2 + 'px';
+                particle.style.top = rect.top + rect.height / 2 + 'px';
+                particle.style.background = '#ffff00';
+
+                const angle = (Math.PI * 2 * i) / 10;
+                const velocity = 50;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                document.body.appendChild(particle);
+
+                let posX = rect.left + rect.width / 2;
+                let posY = rect.top + rect.height / 2;
+                let opacity = 1;
+
+                const animate = () => {
+                    posX += vx * 0.1;
+                    posY += vy * 0.1;
+                    opacity -= 0.02;
+
+                    particle.style.left = posX + 'px';
+                    particle.style.top = posY + 'px';
+                    particle.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particle.remove();
+                    }
+                };
+
+                animate();
+            }
+        }
+
+        function createPowerUpEffect(x, y) {
+            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (!cell) return;
+
+            const rect = cell.getBoundingClientRect();
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = rect.left + rect.width / 2 + 'px';
+                particle.style.top = rect.top + rect.height / 2 + 'px';
+                particle.style.background = '#00ff00';
+                particle.style.boxShadow = '0 0 10px #00ff00';
+                particle.style.width = '6px';
+                particle.style.height = '6px';
+
+                const angle = (Math.PI * 2 * i) / 15;
+                const velocity = 80;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                document.body.appendChild(particle);
+
+                let posX = rect.left + rect.width / 2;
+                let posY = rect.top + rect.height / 2;
+                let opacity = 1;
+
+                const animate = () => {
+                    posX += vx * 0.1;
+                    posY += vy * 0.1;
+                    opacity -= 0.02;
+
+                    particle.style.left = posX + 'px';
+                    particle.style.top = posY + 'px';
+                    particle.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particle.remove();
+                    }
+                };
+
+                animate();
+            }
+        }
+
+        function winLevel() {
+            clearInterval(timerInterval);
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+
+            // Update best time
+            if (!bestTime || elapsedTime < parseInt(bestTime)) {
+                bestTime = elapsedTime;
+                localStorage.setItem('bestTime', bestTime);
+                updateBestTime();
+            }
+
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.innerHTML = `
+                <h2>🎉 LEVEL COMPLETE! 🎉</h2>
+                <p>Moves: ${moves}</p>
+                <p>Coins: ${coinsCollected}</p>
+                <p>Time: ${elapsedTime}s</p>
+                ${!bestTime || elapsedTime <= parseInt(bestTime) ? '<p style="color: #00ff00; font-size: 1.2em;">🏆 NEW RECORD!</p>' : ''}
+                <div class="level-indicator">LEVEL ${level}</div>
+            `;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.remove();
+                level++;
+                initGame();
+            }, 3000);
+        }
+
+        function updateStats() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('coins').textContent = coinsCollected;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    document.getElementById('time').textContent = elapsed;
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            if (!isGameStarted) return;
+
+            isPaused = !isPaused;
+            const pauseScreen = document.getElementById('pause-screen');
+
+            if (isPaused) {
+                pauseScreen.classList.add('active');
+            } else {
+                pauseScreen.classList.remove('active');
+            }
+        }
+
+        function createParticles() {
+            const existing = document.querySelectorAll('.particle');
+            existing.forEach(p => p.remove());
+
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.bottom = '-10px';
+                particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+
+                if (Math.random() > 0.5) {
+                    particle.style.background = '#ff00ff';
+                    particle.style.boxShadow = '0 0 5px #ff00ff';
+                }
+
+                particle.style.animation = `particleRise ${Math.random() * 3 + 2}s linear infinite`;
+                particle.style.animationDelay = Math.random() * 2 + 's';
+
+                document.body.appendChild(particle);
+            }
+        }
+
+        // Add particle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes particleRise {
+                0% { transform: translateY(0) scale(0); opacity: 0; }
+                10% { opacity: 1; }
+                90% { opacity: 1; }
+                100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                togglePause();
+                return;
+            }
+
+            if (!isGameStarted || isPaused) return;
+
+            let moved = false;
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    movePlayer(0, -1);
+                    moved = true;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    movePlayer(0, 1);
+                    moved = true;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    movePlayer(-1, 0);
+                    moved = true;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    movePlayer(1, 0);
+                    moved = true;
+                    break;
+            }
+
+            // If speed boost is active and player moved, allow double move
+            if (moved && speedBoostActive && speedBoostMoves > 0) {
+                setTimeout(() => {
+                    // Auto-move in same direction for speed effect
+                }, 100);
+            }
+        });
+
+        // Start screen - Difficulty selection
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                difficulty = btn.dataset.difficulty;
+            });
+        });
+
+        // Start game button
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            isGameStarted = true;
+            document.getElementById('start-screen').classList.add('hidden');
+            initGame();
+        });
+
+        // Pause/Resume buttons
+        document.getElementById('pause-game').addEventListener('click', togglePause);
+        document.getElementById('resume-btn').addEventListener('click', togglePause);
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            togglePause();
+            level = 1;
+            initGame();
+        });
+
+        document.getElementById('main-menu-btn').addEventListener('click', () => {
+            isPaused = false;
+            isGameStarted = false;
+            document.getElementById('pause-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.remove('hidden');
+            if (timerInterval) clearInterval(timerInterval);
+        });
+
+        document.querySelectorAll('.arrow-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dir = btn.dataset.dir;
+                switch(dir) {
+                    case 'up': movePlayer(0, -1); break;
+                    case 'down': movePlayer(0, 1); break;
+                    case 'left': movePlayer(-1, 0); break;
+                    case 'right': movePlayer(1, 0); break;
+                }
+            });
+        });
+
+        document.getElementById('new-game').addEventListener('click', () => {
+            level = 1;
+            initGame();
+        });
+
+        document.getElementById('next-level').addEventListener('click', () => {
+            level++;
+            initGame();
+        });
+
+        // Initialize best time display
+        updateBestTime();
+    </script>
+</body>
+</html>
