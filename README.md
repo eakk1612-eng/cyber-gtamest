@@ -23,10 +23,7 @@
 - Antigravity floating effects
 - เอฟเฟกต์อนุภาค
 - แอนิเมชั่น 3D transforms
- 🎮 วิธีเล่น
-เปิดไฟล์ HTML ในเบราว์เซอร์ หรือเล่นออนไลน์ที่:
-- **Cyber Blocks:** [https://eakk1612-eng.github.io/cyber-games/](https://eakk1612-eng.github.io/cyber-games/)
-- **Cyber Maze:** [https://eakk1612-eng.github.io/cyber-games/maze-game.html](https://eakk1612-eng.github.io/cyber-games/maze-game.html)
+
  💻 เทคโนโลยี
 - HTML5
 - CSS3 (Animations, 3D Transforms)
