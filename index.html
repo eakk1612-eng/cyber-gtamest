@@ -1,515 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Block Connect - Antigravity Puzzle</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #000a1a 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background:
-                repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03) 0px, transparent 1px, transparent 2px, rgba(0, 255, 255, 0.03) 3px),
-                repeating-linear-gradient(90deg, rgba(255, 0, 255, 0.03) 0px, transparent 1px, transparent 2px, rgba(255, 0, 255, 0.03) 3px);
-            animation: gridMove 20s linear infinite;
-            pointer-events: none;
-        }
-
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        .container {
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        h1 {
-            font-size: 3em;
-            color: #00ffff;
-            text-shadow:
-                0 0 10px #00ffff,
-                0 0 20px #00ffff,
-                0 0 30px #ff00ff,
-                0 0 40px #ff00ff;
-            margin-bottom: 10px;
-            animation: glowPulse 2s ease-in-out infinite;
-            letter-spacing: 3px;
-        }
-
-        @keyframes glowPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-
-        .score-panel {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .score-item {
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid #00ffff;
-            padding: 10px 20px;
-            border-radius: 10px;
-            box-shadow:
-                0 0 10px rgba(0, 255, 255, 0.5),
-                inset 0 0 10px rgba(0, 255, 255, 0.2);
-        }
-
-        .score-item label {
-            color: #ff00ff;
-            font-size: 0.9em;
-            display: block;
-            text-shadow: 0 0 5px #ff00ff;
-        }
-
-        .score-item span {
-            color: #00ffff;
-            font-size: 1.5em;
-            font-weight: bold;
-            text-shadow: 0 0 10px #00ffff;
-        }
-
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(6, 80px);
-            grid-template-rows: repeat(6, 80px);
-            gap: 10px;
-            margin: 0 auto;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 3px solid #00ffff;
-            border-radius: 15px;
-            box-shadow:
-                0 0 30px rgba(0, 255, 255, 0.5),
-                inset 0 0 30px rgba(0, 0, 0, 0.5);
-            perspective: 1000px;
-        }
-
-        .block {
-            width: 80px;
-            height: 80px;
-            border-radius: 10px;
-            cursor: pointer;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: all 0.3s ease;
-            border: 2px solid;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
-            font-weight: bold;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotateX(0deg); }
-            50% { transform: translateY(-5px) rotateX(5deg); }
-        }
-
-        .block:hover {
-            transform: translateY(-10px) rotateX(10deg) scale(1.05);
-            filter: brightness(1.3);
-        }
-
-        .block.selected {
-            transform: translateY(-15px) rotateX(15deg) scale(1.1);
-            animation: pulse 0.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 20px currentColor; }
-            50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
-        }
-
-        .block.matched {
-            animation: explode 0.5s ease-out forwards;
-        }
-
-        @keyframes explode {
-            0% { transform: scale(1) rotateZ(0deg); opacity: 1; }
-            100% { transform: scale(2) rotateZ(360deg); opacity: 0; }
-        }
-
-        .block[data-type="1"] {
-            background: linear-gradient(135deg, #ff00ff, #ff0080);
-            border-color: #ff00ff;
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(255, 0, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-
-        .block[data-type="2"] {
-            background: linear-gradient(135deg, #00ffff, #0080ff);
-            border-color: #00ffff;
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-
-        .block[data-type="3"] {
-            background: linear-gradient(135deg, #00ff00, #80ff00);
-            border-color: #00ff00;
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-
-        .block[data-type="4"] {
-            background: linear-gradient(135deg, #ffff00, #ffaa00);
-            border-color: #ffff00;
-            color: #333;
-            box-shadow: 0 5px 15px rgba(255, 255, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-
-        .block[data-type="5"] {
-            background: linear-gradient(135deg, #ff0000, #ff6600);
-            border-color: #ff0000;
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
-        }
-
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        button {
-            padding: 12px 30px;
-            font-size: 1.1em;
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #00ffff, #ff00ff);
-            border: 2px solid #00ffff;
-            border-radius: 10px;
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-            text-transform: uppercase;
-        }
-
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-            background: linear-gradient(135deg, #ff00ff, #00ffff);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .info {
-            margin-top: 20px;
-            color: #00ffff;
-            font-size: 0.9em;
-            text-shadow: 0 0 5px #00ffff;
-        }
-
-        .particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #00ffff;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: particleFloat 3s linear infinite;
-        }
-
-        @keyframes particleFloat {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Games</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    min-height:100vh;font-family:"Courier New",monospace;color:#fff;
+    background:
+      radial-gradient(circle at 20% 20%,rgba(0,255,255,.12),transparent 28%),
+      radial-gradient(circle at 80% 75%,rgba(255,0,255,.12),transparent 30%),
+      linear-gradient(135deg,#050008,#100020 50%,#000914);
+    display:flex;align-items:center;justify-content:center;overflow-x:hidden;position:relative;
+}
+body:before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.45;
+    background:
+      linear-gradient(rgba(0,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,0,255,.04) 1px,transparent 1px);
+    background-size:45px 45px;
+}
+.wrap{width:min(1100px,92%);text-align:center;position:relative;z-index:1;padding:45px 0}
+.logo{
+    font-size:clamp(2.7rem,8vw,6rem);letter-spacing:8px;color:#00ffff;
+    text-shadow:0 0 10px #00ffff,0 0 25px #00ffff,0 0 45px #ff00ff;
+    animation:glow 2.2s ease-in-out infinite;
+}
+@keyframes glow{50%{filter:brightness(.8)}}
+.subtitle{margin:14px 0 42px;color:#c7fbff;font-size:1.05rem;letter-spacing:4px}
+.games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.card{
+    position:relative;padding:34px 28px;border:2px solid #00ffff;border-radius:22px;
+    background:linear-gradient(145deg,rgba(0,255,255,.08),rgba(255,0,255,.08));
+    box-shadow:0 0 22px rgba(0,255,255,.22),inset 0 0 35px rgba(255,0,255,.08);
+    transition:.3s;overflow:hidden;
+}
+.card:hover{transform:translateY(-8px) scale(1.015);box-shadow:0 0 35px rgba(0,255,255,.5),0 0 70px rgba(255,0,255,.18)}
+.card:after{content:"";position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(120deg,transparent,rgba(0,255,255,.35),transparent);transform:translateX(-100%);transition:.6s}
+.card:hover:after{transform:translateX(100%)}
+.icon{font-size:4.5rem;margin-bottom:12px;filter:drop-shadow(0 0 14px #00ffff)}
+h2{font-size:2rem;color:#00ffff;text-shadow:0 0 12px #00ffff;margin-bottom:10px}
+.desc{color:#d6d6ff;line-height:1.7;min-height:55px}
+.tags{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:20px 0}
+.tag{padding:5px 10px;border:1px solid #ff00ff;border-radius:20px;color:#ffb7ff;font-size:.75rem}
+.play{
+    border:0;border-radius:12px;padding:14px 32px;font:700 1rem "Courier New",monospace;
+    color:#02020a;background:linear-gradient(135deg,#00ffff,#ff00ff);cursor:pointer;
+    box-shadow:0 0 22px rgba(0,255,255,.35);transition:.25s;position:relative;z-index:2;
+}
+.play:hover{transform:translateY(-3px);box-shadow:0 0 35px rgba(0,255,255,.7)}
+.footer{margin-top:35px;color:#708a9a;font-size:.78rem;letter-spacing:2px}
+@media(max-width:760px){.games{grid-template-columns:1fr}.wrap{padding:30px 0}.subtitle{margin-bottom:28px}.card{padding:28px 20px}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚡ CYBER BLOCKS ⚡</h1>
-
-        <div class="score-panel">
-            <div class="score-item">
-                <label>SCORE</label>
-                <span id="score">0</span>
-            </div>
-            <div class="score-item">
-                <label>MOVES</label>
-                <span id="moves">30</span>
-            </div>
-            <div class="score-item">
-                <label>COMBO</label>
-                <span id="combo">0</span>
-            </div>
-        </div>
-
-        <div id="game-board"></div>
-
-        <div class="controls">
-            <button id="new-game">NEW GAME</button>
-            <button id="hint">HINT</button>
-        </div>
-
-        <div class="info">
-            Connect 3+ blocks of the same color • Click adjacent blocks
-        </div>
+<div class="wrap">
+    <div class="logo">⚡ CYBER GAMES ⚡</div>
+    <div class="subtitle">SELECT YOUR MISSION</div>
+    <div class="games">
+        <section class="card">
+            <div class="icon">🧩</div>
+            <h2>CYBER BLOCKS</h2>
+            <p class="desc">Connect 3 or more blocks of the same color, build combos and chase a high score.</p>
+            <div class="tags"><span class="tag">PUZZLE</span><span class="tag">COMBO</span><span class="tag">HIGH SCORE</span></div>
+            <button class="play" onclick="location.href='block-game.html'">▶ PLAY GAME</button>
+        </section>
+        <section class="card">
+            <div class="icon">🌀</div>
+            <h2>CYBER MAZE</h2>
+            <p class="desc">Escape procedurally generated mazes, collect coins, use power-ups and beat your best time.</p>
+            <div class="tags"><span class="tag">MAZE</span><span class="tag">LEVELS</span><span class="tag">POWER-UP</span></div>
+            <button class="play" onclick="location.href='maze-game.html'">▶ PLAY GAME</button>
+        </section>
     </div>
-
-    <script>
-        const BOARD_SIZE = 6;
-        const BLOCK_TYPES = 5;
-        const INITIAL_MOVES = 30;
-
-        let board = [];
-        let score = 0;
-        let moves = INITIAL_MOVES;
-        let combo = 0;
-        let selectedBlock = null;
-
-        const symbols = ['◆', '●', '■', '▲', '★'];
-
-        // Initialize game
-        function initGame() {
-            board = [];
-            score = 0;
-            moves = INITIAL_MOVES;
-            combo = 0;
-            selectedBlock = null;
-
-            // Create board
-            for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
-                board.push(Math.floor(Math.random() * BLOCK_TYPES) + 1);
-            }
-
-            // Ensure at least one valid move exists
-            ensureValidMoves();
-
-            updateDisplay();
-            renderBoard();
-            createParticles();
-        }
-
-        function ensureValidMoves() {
-            // Simple validation - ensure we don't have impossible boards
-            let hasMatch = false;
-            for (let i = 0; i < board.length; i++) {
-                const neighbors = getNeighbors(i);
-                for (let n of neighbors) {
-                    if (board[i] === board[n]) {
-                        hasMatch = true;
-                        break;
-                    }
-                }
-                if (hasMatch) break;
-            }
-
-            if (!hasMatch) {
-                // Force at least one matching pair
-                board[0] = board[1] = 1;
-            }
-        }
-
-        function renderBoard() {
-            const gameBoard = document.getElementById('game-board');
-            gameBoard.innerHTML = '';
-
-            board.forEach((type, index) => {
-                const block = document.createElement('div');
-                block.className = 'block';
-                block.dataset.type = type;
-                block.dataset.index = index;
-                block.textContent = symbols[type - 1];
-                block.style.animationDelay = `${(index % BOARD_SIZE) * 0.1}s`;
-                block.addEventListener('click', () => handleBlockClick(index));
-                gameBoard.appendChild(block);
-            });
-        }
-
-        function handleBlockClick(index) {
-            if (moves <= 0) return;
-
-            if (selectedBlock === null) {
-                selectedBlock = index;
-                updateBlockSelection();
-            } else if (selectedBlock === index) {
-                selectedBlock = null;
-                updateBlockSelection();
-            } else if (isAdjacent(selectedBlock, index)) {
-                if (board[selectedBlock] === board[index]) {
-                    const connectedBlocks = findConnectedBlocks(index);
-                    if (connectedBlocks.length >= 3) {
-                        removeBlocks(connectedBlocks);
-                        moves--;
-                        combo++;
-                        score += connectedBlocks.length * 10 * combo;
-                    } else {
-                        combo = 0;
-                    }
-                } else {
-                    combo = 0;
-                }
-                selectedBlock = null;
-                updateDisplay();
-                updateBlockSelection();
-
-                if (moves <= 0) {
-                    setTimeout(endGame, 500);
-                }
-            } else {
-                selectedBlock = index;
-                updateBlockSelection();
-            }
-        }
-
-        function isAdjacent(index1, index2) {
-            const row1 = Math.floor(index1 / BOARD_SIZE);
-            const col1 = index1 % BOARD_SIZE;
-            const row2 = Math.floor(index2 / BOARD_SIZE);
-            const col2 = index2 % BOARD_SIZE;
-
-            return (Math.abs(row1 - row2) === 1 && col1 === col2) ||
-                   (Math.abs(col1 - col2) === 1 && row1 === row2);
-        }
-
-        function getNeighbors(index) {
-            const row = Math.floor(index / BOARD_SIZE);
-            const col = index % BOARD_SIZE;
-            const neighbors = [];
-
-            if (row > 0) neighbors.push(index - BOARD_SIZE);
-            if (row < BOARD_SIZE - 1) neighbors.push(index + BOARD_SIZE);
-            if (col > 0) neighbors.push(index - 1);
-            if (col < BOARD_SIZE - 1) neighbors.push(index + 1);
-
-            return neighbors;
-        }
-
-        function findConnectedBlocks(startIndex) {
-            const type = board[startIndex];
-            const connected = new Set([startIndex]);
-            const toCheck = [startIndex];
-
-            while (toCheck.length > 0) {
-                const current = toCheck.pop();
-                const neighbors = getNeighbors(current);
-
-                for (let n of neighbors) {
-                    if (!connected.has(n) && board[n] === type) {
-                        connected.add(n);
-                        toCheck.push(n);
-                    }
-                }
-            }
-
-            return Array.from(connected);
-        }
-
-        function removeBlocks(indices) {
-            const blocks = document.querySelectorAll('.block');
-            indices.forEach(index => {
-                blocks[index].classList.add('matched');
-            });
-
-            setTimeout(() => {
-                indices.sort((a, b) => b - a).forEach(index => {
-                    board.splice(index, 1);
-                });
-
-                // Fill with new blocks
-                while (board.length < BOARD_SIZE * BOARD_SIZE) {
-                    board.unshift(Math.floor(Math.random() * BLOCK_TYPES) + 1);
-                }
-
-                renderBoard();
-            }, 500);
-        }
-
-        function updateBlockSelection() {
-            const blocks = document.querySelectorAll('.block');
-            blocks.forEach((block, index) => {
-                if (index === selectedBlock) {
-                    block.classList.add('selected');
-                } else {
-                    block.classList.remove('selected');
-                }
-            });
-        }
-
-        function updateDisplay() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('moves').textContent = moves;
-            document.getElementById('combo').textContent = combo;
-        }
-
-        function showHint() {
-            // Find a valid move
-            for (let i = 0; i < board.length; i++) {
-                const neighbors = getNeighbors(i);
-                for (let n of neighbors) {
-                    if (board[i] === board[n]) {
-                        const connected = findConnectedBlocks(i);
-                        if (connected.length >= 3) {
-                            const blocks = document.querySelectorAll('.block');
-                            connected.forEach(index => {
-                                blocks[index].style.animation = 'pulse 0.5s ease-in-out 3';
-                            });
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        function endGame() {
-            alert(`GAME OVER!\n\nFinal Score: ${score}\nCombo Record: ${combo}`);
-        }
-
-        function createParticles() {
-            for (let i = 0; i < 20; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 3 + 's';
-                particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
-
-                if (Math.random() > 0.5) {
-                    particle.style.background = '#ff00ff';
-                }
-
-                document.body.appendChild(particle);
-            }
-        }
-
-        // Event listeners
-        document.getElementById('new-game').addEventListener('click', initGame);
-        document.getElementById('hint').addEventListener('click', showHint);
-
-        // Start game
-        initGame();
-    </script>
+    <div class="footer">CYBER-GTAMEST • TWO GAMES • ONE NEON WORLD</div>
+</div>
 </body>
 </html>
